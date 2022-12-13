@@ -13,6 +13,8 @@ using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using System.Linq;
+using Mastercam.BasicGeometry;
 
 namespace _rpGenCut
 {
@@ -37,6 +39,9 @@ namespace _rpGenCut
             var templist10 = new List<int>(); // temporarily holds geoID of chainEntities
             var templist80 = new List<int>();
             var templist81 = new List<int>();
+            var templist500 = new List<int>();
+            var anotherTemplist500 = new List<int>();
+            var templist501 = new List<int>();
             var upperCreaseID = new List<int>();
             var lowerCreaseID = new List<int>();
 
@@ -445,11 +450,192 @@ namespace _rpGenCut
                 GraphicsManager.ClearColors(new GroupSelectionMask(true));
                 GraphicsManager.Repaint(true);
             } // Shortens chains on level 501
+            void findChainEnds500()
+            {
+                SelectionManager.UnselectAllGeometry();
+                LevelsManager.RefreshLevelsManager();
+                LevelsManager.SetMainLevel(500);
+                var shown = LevelsManager.GetVisibleLevelNumbers();
+                foreach (var level in shown){
+                    LevelsManager.SetLevelVisible(level, false);
+                }
+                LevelsManager.SetLevelVisible(500, true);
+                LevelsManager.RefreshLevelsManager();
+                GraphicsManager.Repaint(true);
+                var chainDetails = new Mastercam.Database.Interop.ChainDetails();// Preps the ChainDetails plugin
+                var selectedChains = ChainManager.ChainAll(500);
+                var chainDirection = ChainDirectionType.CounterClockwise;// Going to be used to make sure all chains go the same direction
+                ChainManager.StartChainAtLongest(selectedChains);
+                foreach (var chain in selectedChains){
+                    chain.Direction = chainDirection;
+                    var chainData = chainDetails.GetData(chain);
+                    var firstEntity = chainData.FirstEntity.GetEntityID();
+                    var lastEntity = chainData.LastEntity.GetEntityID();
+                    var firstIsFlipped = chainData.FirstEntityIsFlipped;
+                    var lastIsFlipped = chainData.LastEntityIsFlipped;
+                    if (Geometry.RetrieveEntity(firstEntity) is ArcGeometry startArc){
+                        startArc.Color = 70;
+                        startArc.Commit();
+                        templist500.Add(firstEntity);
+                        anotherTemplist500.Add(firstEntity);
+                    }
+                    if (Geometry.RetrieveEntity(lastEntity) is ArcGeometry endArc){
+                        endArc.Color = 70;
+                        endArc.Commit();
+                        templist500.Add(lastEntity);
+                        anotherTemplist500.Add(lastEntity);
+                    }
+                }
+                GraphicsManager.Repaint(true);
+                var tempListArc = new List<int>();
+                var tempListRad = new List<double>();
+                var rad1 = 0;
+                var rad2 = 0;
+                var rad3 = 0;
+                var rad4 = 0;
+                foreach (var arc in templist500){
+                    if (Geometry.RetrieveEntity(arc) is ArcGeometry firstArc && firstArc.Color != 60){
+                        tempListArc.Add(arc);
+                        tempListRad.Add(firstArc.Data.Radius);
+                        var firstArcCP = firstArc.Data.CenterPoint;
+                        foreach (var anotherArc in templist500){
+                            if (Geometry.RetrieveEntity(anotherArc) is ArcGeometry nextArc && anotherArc != arc && nextArc.Color != 60){
+                                var nextArcCP = nextArc.Data.CenterPoint;
+                                if (VectorManager.Distance(firstArcCP, nextArcCP) < 0.001){
+                                    tempListRad.Add(nextArc.Data.Radius);
+                                    tempListArc.Add(anotherArc);
+                                    if (tempListArc.Count == 4){
+                                        foreach (var thisArc in tempListArc){
+                                            var entity = Geometry.RetrieveEntity(thisArc);
+                                            entity.Color = 60;
+                                            entity.Commit();
+                                            tempListRad.Sort();
+                                            GraphicsManager.Repaint(true);
+                                        }
+                                        foreach (var i in tempListArc){
+                                            var thisEntity = Geometry.RetrieveEntity(i);
+                                            if (thisEntity is ArcGeometry rad){
+                                                if (rad.Data.Radius == tempListRad[0]){
+                                                    rad1 = (thisEntity.GetEntityID());
+                                                }
+                                                if (rad.Data.Radius == tempListRad[1]){
+                                                    rad2 = (thisEntity.GetEntityID());
+                                                }
+                                                if (rad.Data.Radius == tempListRad[2]){
+                                                    rad3 = (thisEntity.GetEntityID());
+                                                }
+                                                if (rad.Data.Radius == tempListRad[3]){
+                                                    rad4 = (thisEntity.GetEntityID());
+                                                }
+                                            }
+                                        }
+                                        var newRad1 = Geometry.RetrieveEntity(rad1);
+                                        var newRad2 = Geometry.RetrieveEntity(rad2);
+                                        var newRad3 = Geometry.RetrieveEntity(rad3);
+                                        var newRad4 = Geometry.RetrieveEntity(rad4);
+                                        var arc1End = new Point3D();
+                                        var arc2End = new Point3D();
+                                        var arc3End = new Point3D();
+                                        var arc4End = new Point3D();
+                                        newRad1.Commit();
+                                        newRad2.Commit();
+                                        newRad3.Commit();
+                                        newRad4.Commit();
 
-            offsetCutchain80();
-            offsetCutchain81();
-            shortenChains500();
-            shortenChains501();
+                                        if (newRad2 is ArcGeometry arc2){
+                                            var arcStartPoint = (arc2.Data.StartAngleDegrees);
+                                            var arcEndPoint = (arc2.Data.EndAngleDegrees);
+                                            var arcRad = arc2.Data.Radius;
+                                            var arcLength = ((VectorManager.DegreesToRadians(arcStartPoint - arcEndPoint)) * arcRad);
+                                            var newArcLength = (arcLength + 0.020);
+                                            var circumference = 2 * Math.PI * arcRad;
+                                            var arcMeasure = ((newArcLength / circumference) * 360);
+                                            arc2.Data.StartAngleDegrees = (arcEndPoint + arcMeasure);
+                                            newRad2.Commit();
+                                            var cx = arc2.Data.CenterPoint.x;
+                                            var cy = arc2.Data.CenterPoint.y;
+                                            var x = cx + arcRad * Math.Sin(arc2.Data.StartAngleDegrees);
+                                            var y = cy + arcRad * Math.Cos(arc2.Data.StartAngleDegrees);
+                                            arc2End = new Point3D(x ,y ,0.0);
+                                            var point = new PointGeometry(arc2End);
+                                            point.Color = 11;
+                                            point.Commit();
+                                            newRad2.Commit();
+                                        }
+                                        if (newRad3 is ArcGeometry arc3){
+                                            var arcStartPoint = (arc3.Data.StartAngleDegrees);
+                                            var arcEndPoint = (arc3.Data.EndAngleDegrees);
+                                            var arcRad = arc3.Data.Radius;
+                                            var arcLength = ((VectorManager.DegreesToRadians(arcStartPoint - arcEndPoint)) * arcRad);
+                                            var newArcLength = (arcLength + 0.020);
+                                            var circumference = 2 * Math.PI * arcRad;
+                                            var arcMeasure = ((newArcLength / circumference) * 360);
+                                            arc3.Data.EndAngleDegrees = (arcStartPoint - arcMeasure);
+                                            newRad3.Commit();
+                                            var cx = arc3.Data.CenterPoint.x;
+                                            var cy = arc3.Data.CenterPoint.y;
+                                            var x = cx + arcRad * Math.Sin(arc3.Data.EndAngleDegrees);
+                                            var y = cy + arcRad * Math.Cos(arc3.Data.EndAngleDegrees);
+                                            arc3End = new Point3D(x, y, 0.0);
+                                            var point = new PointGeometry(arc3End);
+                                            point.Color = 12;
+                                            point.Commit();
+                                            newRad3.Commit();
+                                        }
+                                        if (newRad1 is ArcGeometry arc1){
+                                            if (((arc1.Data.StartAngleDegrees + 360) - (arc1.Data.EndAngleDegrees + 360)) < arc1.Data.StartAngleDegrees)
+                                            {
+                                                arc1End = new Point3D(arc1.EndPoint1.x, arc1.EndPoint1.y,0.0);
+                                                var point = new PointGeometry(arc1End);
+                                                point.Color = 10;
+                                                point.Commit();
+                                            }
+                                            if (((arc1.Data.StartAngleDegrees + 360) - (arc1.Data.EndAngleDegrees + 360)) > arc1.Data.StartAngleDegrees)
+                                            {
+                                                arc1End = new Point3D(arc1.EndPoint2.x, arc1.EndPoint2.y, 0.0);
+                                                var point = new PointGeometry(arc1End);
+                                                point.Color = 10;
+                                                point.Commit();
+                                            }
+                                        }
+                                        if (newRad4 is ArcGeometry arc4){
+                                            var cx = arc4.Data.CenterPoint.x;
+                                            var cy = arc4.Data.CenterPoint.y;
+                                            var arcRad = arc4.Data.Radius;
+                                            var x = cx + arcRad * Math.Sin(arc4.Data.EndAngleDegrees);
+                                            var y = cy + arcRad * Math.Cos(arc4.Data.EndAngleDegrees);
+                                            arc4End = new Point3D(x, y, 0.0);
+                                            var point = new PointGeometry(arc4End);
+                                            point.Color = 13;
+                                            point.Commit();
+                                            newRad3.Commit();
+                                        }
+
+                                        //var line1 = new LineGeometry(arc1End, arc2End);
+                                        //var line2 = new LineGeometry(arc3End, arc4End);
+                                        //line1.Color = 10;
+                                        //line2.Color = 10;
+                                        //line1.Commit();
+                                        //line2.Commit();
+                                        tempListArc.Clear();
+                                        tempListRad.Clear();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                GraphicsManager.ClearColors(new GroupSelectionMask(true));
+                GraphicsManager.Repaint(true);
+            } // Shortens chains on level 500
+
+
+            //offsetCutchain80();
+            //offsetCutchain81();
+            //shortenChains500();
+            //shortenChains501();
+            findChainEnds500();
 
             return MCamReturn.NoErrors;
         }

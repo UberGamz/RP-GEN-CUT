@@ -16,6 +16,7 @@ using System.Windows.Forms;
 using System.Linq;
 using Mastercam.BasicGeometry;
 using Mastercam.IO.Types;
+using System.Xml;
 
 namespace _rpGenCut
 {
@@ -44,6 +45,8 @@ namespace _rpGenCut
             var anotherTemplist500 = new List<int>();
             var templist501 = new List<int>();
             var anotherTemplist501 = new List<int>();
+            var pointList = new List<int>();
+            var secondPointList = new List<int>();
             var upperCreaseID = new List<int>();
             var lowerCreaseID = new List<int>();
 
@@ -828,16 +831,140 @@ namespace _rpGenCut
                 GraphicsManager.ClearColors(new GroupSelectionMask(true));
                 GraphicsManager.Repaint(true);
             }
+            void findLineChainEnds500()
+            {
+                SelectionManager.UnselectAllGeometry();
+                LevelsManager.RefreshLevelsManager();
+                LevelsManager.SetMainLevel(500);
+                var shown = LevelsManager.GetVisibleLevelNumbers();
+                foreach (var level in shown)
+                {
+                    LevelsManager.SetLevelVisible(level, false);
+                }
+                LevelsManager.SetLevelVisible(500, true);
+                LevelsManager.SetLevelVisible(50, true);
+                LevelsManager.RefreshLevelsManager();
+                GraphicsManager.Repaint(true);
+                SelectionManager.SelectGeometryByMask(Mastercam.IO.Types.QuickMaskType.Points);
+                var selectedGeometry = SearchManager.GetSelectedGeometry();
+                foreach (var point in selectedGeometry)
+                {
+                    pointList.Add(point.GetEntityID());
+                }
+                LevelsManager.SetLevelVisible(50, false);
+                LevelsManager.RefreshLevelsManager();
+                GraphicsManager.Repaint(true);
+                var chainDetails = new Mastercam.Database.Interop.ChainDetails();// Preps the ChainDetails plugin
+                var selectedChains = ChainManager.ChainAll(500);
+                var chainDirection = ChainDirectionType.CounterClockwise;// Going to be used to make sure all chains go the same direction
+                ChainManager.StartChainAtLongest(selectedChains);
+
+                foreach (var chain in selectedChains){
+                    chain.Direction = chainDirection;
+                    var chainData = chainDetails.GetData(chain);
+                    var firstEntity = chainData.FirstEntity.GetEntityID();
+                    var lastEntity = chainData.LastEntity.GetEntityID();
+                    var firstIsFlipped = chainData.FirstEntityIsFlipped;
+                    var lastIsFlipped = chainData.LastEntityIsFlipped;
+                    if (Geometry.RetrieveEntity(firstEntity) is LineGeometry startLine){
+                        startLine.Color = 70;
+                        startLine.Commit();
+                        templist500.Add(firstEntity);
+                    }
+                    if (Geometry.RetrieveEntity(lastEntity) is LineGeometry endLine){
+                        endLine.Color = 70;
+                        endLine.Commit();
+                        templist500.Add(lastEntity);
+                    }
+                }
+                foreach (var line in templist500) {
+                    var thisLine = Geometry.RetrieveEntity(line);
+                    if (thisLine is LineGeometry noThisLine){
+                        var pt1 = noThisLine.Data.Point1;
+                        var pt2 = noThisLine.Data.Point2;
+                        var deltaY = (pt1.y - pt2.y);
+                        var deltaX = (pt2.x - pt1.x);
+                        var result = VectorManager.RadiansToDegrees(Math.Atan2(deltaY, deltaX));
+                        if (result < 0) {result = (result + 360);}
+                        if (result >=0 && result <= 89){
+                            var thisPoint = new PointGeometry(new Point3D(pt2.x, pt2.y, 0.0));
+                            thisPoint.Color = 90;
+                            thisPoint.Commit();
+                            secondPointList.Add(thisPoint.GetEntityID());
+                        }
+                        if (result >= 90 && result <= 179){
+                            var thisPoint = new PointGeometry(new Point3D(pt1.x, pt1.y, 0.0));
+                            thisPoint.Color = 90;
+                            thisPoint.Commit();
+                            secondPointList.Add(thisPoint.GetEntityID());
+                        }
+                        if (result >= 180 && result <= 269){
+                            var thisPoint = new PointGeometry(new Point3D(pt2.x, pt2.y, 0.0));
+                            thisPoint.Color = 90;
+                            thisPoint.Commit();
+                            secondPointList.Add(thisPoint.GetEntityID());
+                        }
+                        if (result >= 270 && result <= 359){
+                            var thisPoint = new PointGeometry(new Point3D(pt1.x, pt1.y, 0.0));
+                            thisPoint.Color = 90;
+                            thisPoint.Commit();
+                            secondPointList.Add(thisPoint.GetEntityID());
+                        }
+                    }
+                }
+                foreach (var point in secondPointList) {
+                    var step = 0;
+                    var newLine = new LineGeometry();
+                    var thisPoint = PointGeometry.RetrieveEntity(point);
+                    if (thisPoint is PointGeometry yesThisPoint){
+                        var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                        foreach (var centerPoint in pointList){
+                            var thisCenterPoint = Geometry.RetrieveEntity(centerPoint);
+                            if (thisCenterPoint is PointGeometry yesThisCenterPoint){
+                                var finallyThisCenterPoint = new Point3D(yesThisCenterPoint.Data.x, yesThisCenterPoint.Data.y, 0.0);
+                                if (step == 0) { 
+                                    newLine = new LineGeometry(finallyThisPoint, finallyThisCenterPoint);
+                                    newLine.Commit();
+                                    step = 1;
+                                }
+                                if (VectorManager.Distance(finallyThisPoint, finallyThisCenterPoint) < VectorManager.Distance(newLine.Data.Point1, newLine.Data.Point2) && step == 1){
+                                    newLine.Data.Point2 = finallyThisCenterPoint;
+                                    newLine.Color = 90;
+                                    newLine.Commit();
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+
+
+
+                foreach (var chain in ChainManager.ChainAll(500)){
+                    var chainGeo = ChainManager.GetGeometryInChain(chain);
+                    foreach (var entity in chainGeo)
+                    {
+                        entity.Color = 70;
+                        entity.Selected = false;
+                        entity.Commit();
+                    }
+                }
+                SelectionManager.UnselectAllGeometry();
+                GraphicsManager.ClearColors(new GroupSelectionMask(true));
+                GraphicsManager.Repaint(true);
+            }
 
 
 
 
             //offsetCutchain80();
-           // offsetCutchain81();
+            //offsetCutchain81();
             //shortenChains500();
             //shortenChains501();
-            findArcChainEnds500();
-            findArcChainEnds501();
+            //findArcChainEnds500();
+            //findArcChainEnds501();
+            findLineChainEnds500();
 
 
 

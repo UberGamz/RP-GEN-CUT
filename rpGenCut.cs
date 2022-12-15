@@ -46,6 +46,7 @@ namespace _rpGenCut
             var templist501 = new List<int>();
             var anotherTemplist501 = new List<int>();
             var pointList = new List<int>();
+            var lineList = new List<int>();
             var secondPointList = new List<int>();
             var upperCreaseID = new List<int>();
             var lowerCreaseID = new List<int>();
@@ -932,6 +933,170 @@ namespace _rpGenCut
                                     newLine.Color = 90;
                                     newLine.Commit();
                                 }
+                                lineList.Add(newLine.GetEntityID());
+                            }
+                        }
+                    }
+                }
+                foreach (var point in pointList) {
+                    var tempLineListDown = new List<double>();
+                    var tempLinesGoingDown = new List<int>();
+                    var tempLineListUp = new List<double>();
+                    var tempLinesGoingUp = new List<int>();
+                    if (Geometry.RetrieveEntity(point) is PointGeometry centerPoint){
+                        var pointGeo = new Point3D(centerPoint.Data.x, centerPoint.Data.y, 0.0);
+                        foreach (var entity in lineList){
+                            if (Geometry.RetrieveEntity(entity) is LineGeometry line){
+                                if(VectorManager.Distance(line.EndPoint2, pointGeo) <= 0.001){
+                                    var pt1 = line.EndPoint1;
+                                    var pt2 = line.EndPoint2;
+                                    var deltaY = (pt1.y - pt2.y);
+                                    var deltaX = (pt2.x - pt1.x);
+                                    var result = VectorManager.RadiansToDegrees(Math.Atan2(deltaY, deltaX));
+                                    if (result < 0) { result = (result + 360); }
+                                    if (result >= 0 && result <= 179){
+                                        var thisLine = line.GetEntityID();
+                                        if(tempLinesGoingDown.Contains(thisLine) == false) { tempLinesGoingDown.Add(thisLine); }
+                                        if (tempLineListDown.Contains(VectorManager.Distance(pt1, pt2)) == false) { tempLineListDown.Add(VectorManager.Distance(pt1, pt2));}
+                                        if (tempLineListDown.Count == 4) {
+                                            tempLineListDown.Sort();
+                                            foreach (var extraLine in tempLinesGoingDown){
+                                                if (Geometry.RetrieveEntity(extraLine) is LineGeometry i){
+                                                    var lineLength = VectorManager.Distance(i.EndPoint1, i.EndPoint2);
+                                                    if (lineLength == tempLineListDown[0]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 50;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    if (lineLength == tempLineListDown[1]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 51;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    if (lineLength == tempLineListDown[2]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 52;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    if (lineLength == tempLineListDown[3]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 53;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            tempLinesGoingDown.Clear();
+                                            tempLineListDown.Clear();
+                                        }
+                                    }
+                                }
+                                if (VectorManager.Distance(line.EndPoint2, pointGeo) <= 0.001){
+                                    var pt1 = line.EndPoint1;
+                                    var pt2 = line.EndPoint2;
+                                    var deltaY = (pt1.y - pt2.y);
+                                    var deltaX = (pt2.x - pt1.x);
+                                    var result = VectorManager.RadiansToDegrees(Math.Atan2(deltaY, deltaX));
+                                    if (result < 0) { result = (result + 360); }
+                                    if (result >= 180 && result <= 259){
+                                        var thisLine = line.GetEntityID();
+                                        if (tempLinesGoingUp.Contains(thisLine) == false) { tempLinesGoingUp.Add(thisLine); }
+                                        if (tempLineListUp.Contains(VectorManager.Distance(pt1, pt2)) == false) { tempLineListUp.Add(VectorManager.Distance(pt1, pt2)); }
+                                        if (tempLineListUp.Count == 4){
+                                            tempLineListUp.Sort();
+                                            foreach (var extraLine in tempLinesGoingUp){
+                                                if (Geometry.RetrieveEntity(extraLine) is LineGeometry i){
+                                                    var lineLength = VectorManager.Distance(i.EndPoint1, i.EndPoint2);
+                                                    if (lineLength == tempLineListUp[0]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 50;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    if (lineLength == tempLineListUp[1]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 51;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    if (lineLength == tempLineListUp[2]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 52;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    if (lineLength == tempLineListUp[3]){
+                                                        i.Delete();
+                                                        foreach (var endPoint in secondPointList){
+                                                            var thisPoint = PointGeometry.RetrieveEntity(endPoint);
+                                                            if (thisPoint is PointGeometry yesThisPoint){
+                                                                var finallyThisPoint = new Point3D(yesThisPoint.Data.x, yesThisPoint.Data.y, 0.0);
+                                                                if (VectorManager.Distance(i.EndPoint1, finallyThisPoint) <= 0.001){
+                                                                    thisPoint.Color = 53;
+                                                                    thisPoint.Commit();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            tempLinesGoingUp.Clear();
+                                            tempLineListUp.Clear();
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -940,7 +1105,7 @@ namespace _rpGenCut
 
 
 
-
+                /*
                 foreach (var chain in ChainManager.ChainAll(500)){
                     var chainGeo = ChainManager.GetGeometryInChain(chain);
                     foreach (var entity in chainGeo)
@@ -950,6 +1115,7 @@ namespace _rpGenCut
                         entity.Commit();
                     }
                 }
+                */
                 SelectionManager.UnselectAllGeometry();
                 GraphicsManager.ClearColors(new GroupSelectionMask(true));
                 GraphicsManager.Repaint(true);

@@ -57,6 +57,15 @@ namespace _rpGenCut
             void translate()
             {
                 SelectionManager.UnselectAllGeometry();
+                LevelsManager.RefreshLevelsManager();
+                LevelsManager.SetMainLevel(75);
+                var shown = LevelsManager.GetVisibleLevelNumbers();
+                foreach (var level in shown)
+                {
+                    LevelsManager.SetLevelVisible(level, false);
+                }
+                LevelsManager.SetLevelVisible(75, true);
+                LevelsManager.RefreshLevelsManager();
                 var tempChain1 = SearchManager.SelectAllGeometryOnLevel(75, true);
                 var tempSelectedGeometry1 = SearchManager.GetSelectedGeometry();
                 var temp1 = GeometryManipulationManager.CopySelectedGeometryToLevel(10, true);
@@ -286,7 +295,7 @@ namespace _rpGenCut
                     tempI.Delete();
                 }
                 GraphicsManager.ClearColors(new GroupSelectionMask(true));
-                GraphicsManager.Repaint(true);
+                //GraphicsManager.Repaint(true);
             } // Deletes temporary lines and arcs
             void breakArcsWithPoints()
             {
@@ -1912,7 +1921,7 @@ namespace _rpGenCut
                 }
                 LevelsManager.SetLevelVisible(75, true);
                 LevelsManager.RefreshLevelsManager();
-                GraphicsManager.Repaint(true);
+                //GraphicsManager.Repaint(true);
                 SelectionManager.SelectAllGeometry();
                 var selectedGeometry = SearchManager.GetSelectedGeometry();
                 foreach (var geometry in selectedGeometry)
@@ -2237,7 +2246,7 @@ namespace _rpGenCut
                 }
                 LevelsManager.SetLevelVisible(501, true);
                 LevelsManager.RefreshLevelsManager();
-                GraphicsManager.Repaint(true);
+                GraphicsManager.Repaint(true);//required
                 var chainDetails = new Mastercam.Database.Interop.ChainDetails();// Preps the ChainDetails plugin
                 var selectedChains = ChainManager.ChainAll(501);
                 var chainDirection = ChainDirectionType.CounterClockwise;// Going to be used to make sure all chains go the same direction
@@ -2576,7 +2585,7 @@ namespace _rpGenCut
                 }
                 LevelsManager.SetLevelVisible(501, true);
                 LevelsManager.RefreshLevelsManager();
-                GraphicsManager.Repaint(true);
+                //GraphicsManager.Repaint(true);
                 var chainDetails = new Mastercam.Database.Interop.ChainDetails();// Preps the ChainDetails plugin
                 var selectedChains = ChainManager.ChainAll(501);
                 var chainDirection = ChainDirectionType.CounterClockwise;// Going to be used to make sure all chains go the same direction
@@ -2799,7 +2808,7 @@ namespace _rpGenCut
                 foreach (var point in selectedGeometry) { pointList.Add(point.GetEntityID()); }
                 LevelsManager.SetLevelVisible(50, false);
                 LevelsManager.RefreshLevelsManager();
-                GraphicsManager.Repaint(true);
+                //GraphicsManager.Repaint(true);
                 var chainDetails = new Mastercam.Database.Interop.ChainDetails();// Preps the ChainDetails plugin
                 var selectedChains = ChainManager.ChainAll(500);
                 var chainDirection = ChainDirectionType.CounterClockwise;// Going to be used to make sure all chains go the same direction
@@ -3561,7 +3570,7 @@ namespace _rpGenCut
                 foreach (var point in selectedGeometry) { pointList.Add(point.GetEntityID()); }
                 LevelsManager.SetLevelVisible(50, false);
                 LevelsManager.RefreshLevelsManager();
-                GraphicsManager.Repaint(true);
+                //GraphicsManager.Repaint(true);
                 var chainDetails = new Mastercam.Database.Interop.ChainDetails();// Preps the ChainDetails plugin
                 var selectedChains = ChainManager.ChainAll(501);
                 var chainDirection = ChainDirectionType.CounterClockwise;// Going to be used to make sure all chains go the same direction
@@ -4196,23 +4205,40 @@ namespace _rpGenCut
                 }
             }
 
+            deSelect();
             translate();
+            deSelect();
             findIntersectionOfLines();
+            deSelect();
             findIntersectionOfArcs();
+            deSelect();
             clearTempLinesAndArcs();
+            deSelect();
             breakArcsWithPoints();
+            deSelect();
             selectNewGeo();
+            deSelect();
             colorCrossovers();
+            deSelect();
             movePoints();
+            deSelect();
             seperateGeometry();
+            deSelect();
             ChainManager.ChainTolerance = 0.0001;
             offsetCutchain80();
+            deSelect();
             offsetCutchain81();
+            deSelect();
             shortenChains500();
+            deSelect();
             findLineChainEnds500();
+            deSelect();
             findArcChainEnds500();
+            deSelect();
             shortenChains501();
+            deSelect();
             findArcChainEnds501();
+            deSelect();
             findLineChainEnds501();
             deSelect();
 

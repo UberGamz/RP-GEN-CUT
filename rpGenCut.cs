@@ -87,6 +87,7 @@ namespace _rpGenCut
                 foreach (var entity in tempSelectedGeometry1Result)
                 {
                     entity.Color = 10;
+                    entity.Selected = false;
                     entity.Translate(startPoint, endPointUpper, Top, Top);
                     tempList1.Add(entity.GetEntityID());
                     entity.Commit();
@@ -100,6 +101,7 @@ namespace _rpGenCut
                 foreach (var entity in tempSelectedGeometry2Result)
                 {
                     entity.Color = 11;
+                    entity.Selected = false;
                     entity.Translate(startPoint, endPointLower, Top, Top);
                     tempList2.Add(entity.GetEntityID());
                     entity.Commit();
@@ -354,6 +356,7 @@ namespace _rpGenCut
                 var tempSelectedGeometry1 = SearchManager.GetSelectedGeometry();
                 foreach (var i in tempSelectedGeometry1)
                 {
+                    i.Selected = false;
                     tempList8.Add(i.GetEntityID());
                 }
                 tempSelectedGeometry1 = null;
@@ -2003,10 +2006,10 @@ namespace _rpGenCut
                             foreach (var entity in cutResultGeometry)
                             {
                                 entity.Color = 11;
-                                entity.Selected = true;
+                                entity.Level = createdLowerLevel;
+                                entity.Selected = false;
                                 entity.Commit();
                             }
-                            GeometryManipulationManager.MoveSelectedGeometryToLevel(createdLowerLevel, true);
                             GraphicsManager.ClearColors(new GroupSelectionMask(true));
                             var upperChainLarge = chain.OffsetChain2D(OffsetSideType.Right, .0025, OffsetRollCornerType.None, .5, false, .005, false);
                             var upperChainSmall = chain.OffsetChain2D(OffsetSideType.Left, .0385, OffsetRollCornerType.None, .5, false, .005, false);
@@ -2014,10 +2017,10 @@ namespace _rpGenCut
                             foreach (var entity in cutResultGeometryNew)
                             {
                                 entity.Color = 10;
-                                entity.Selected = true;
+                                entity.Level = createdUpperLevel;
+                                entity.Selected = false;
                                 entity.Commit();
                             }
-                            GeometryManipulationManager.MoveSelectedGeometryToLevel(createdUpperLevel, true);
                             GraphicsManager.ClearColors(new GroupSelectionMask(true));
                         }
                     }
@@ -2080,10 +2083,10 @@ namespace _rpGenCut
                             foreach (var entity in cutResultGeometry)
                             {
                                 entity.Color = 11;
-                                entity.Selected = true;
+                                entity.Level = createdLowerLevel;
+                                entity.Selected = false;
                                 entity.Commit();
                             }
-                            GeometryManipulationManager.MoveSelectedGeometryToLevel(createdLowerLevel, true);
                             GraphicsManager.ClearColors(new GroupSelectionMask(true));
 
                             var upperChainLarge = chain.OffsetChain2D(OffsetSideType.Left, .0025, OffsetRollCornerType.None, .5, false, .005, false);
@@ -2092,10 +2095,10 @@ namespace _rpGenCut
                             foreach (var entity in cutResultGeometryNew)
                             {
                                 entity.Color = 10;
-                                entity.Selected = true;
+                                entity.Level = createdUpperLevel;
+                                entity.Selected = false;
                                 entity.Commit();
                             }
-                            GeometryManipulationManager.MoveSelectedGeometryToLevel(createdUpperLevel, true);
                             GraphicsManager.ClearColors(new GroupSelectionMask(true));
                         }
                     }
